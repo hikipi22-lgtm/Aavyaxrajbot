@@ -1,46 +1,65 @@
 import asyncio
-from pyrogram.types import InputMediaPhoto
+from pyrogram.types import InputMediaPhoto, InlineKeyboardButton, InlineKeyboardMarkup
 from pytgcalls import PyTgCalls, types
-from anony import app, db, logger, queue
-from anony.helpers import buttons
+from pytgcalls.pytgcalls_session import PyTgCallsSession
+from anony import app, db, logger, userbot
 
 class TgCall(PyTgCalls):
-    # ... (init aur baki parts same rahenge)
+    def __init__(self):
+        self.clients = []
 
     async def play_media(self, chat_id: int, media, message=None):
         client = await db.get_assistant(chat_id)
-        stream = types.MediaStream(media_path=media.file_path)
+        stream = types.MediaStream(
+            media_path=media.file_path,
+            audio_parameters=types.AudioQuality.HIGH,
+            video_parameters=types.VideoQuality.HD_720p,
+        )
         
+        # UI Buttons
+        btns = InlineKeyboardMarkup([[
+            InlineKeyboardButton("⏸", callback_data=f"pause_{chat_id}"),
+            InlineKeyboardButton("▶️", callback_data=f"resume_{chat_id}"),
+            InlineKeyboardButton("⏭", callback_data=f"skip_{chat_id}"),
+        ]])
+
         try:
             await client.play(chat_id, stream)
             if message:
-                # 🕒 Timer Logic loop
                 duration_sec = media.duration_sec
-                played_sec = 0
-                
-                while played_sec < duration_sec:
-                    # Timer aur Progress Bar format
-                    percentage = int((played_sec / duration_sec) * 100)
-                    bar = "🔘" + "─" * 15 # Static bar with current time
+                played = 0
+                while played < duration_sec:
+                    # 🕒 Timer calculation
+                    p_min, p_sec = divmod(played, 60)
+                    
+                    # 📊 Progress Bar Logic
+                    bar_fill = int((played / duration_sec) * 15)
+                    bar = "🔘" + "─" * bar_fill + "─" * (15 - bar_fill)
                     
                     text = (
                         f"**| Started streaming**\n\n"
-                        f"**Title:** [{media.title}]({media.url})\n"
-                        f"**Duration:** `{played_sec//60:02d}:{played_sec%60:02d} / {media.duration}`\n"
+                        f"**Title:** [{media.title}]({media.url})\n\n"
+                        f"**Duration:** `{p_min:02d}:{p_sec:02d} / {media.duration}`\n"
                         f"**Requested by:** {media.user}\n\n"
                         f"{bar}"
                     )
-                    
                     try:
                         await message.edit_media(
                             media=InputMediaPhoto(media=media.thumb, caption=text),
-                            reply_markup=buttons.controls(chat_id) # Buttons yahan se aayenge
+                            reply_markup=btns
                         )
                     except:
-                        break # Agar message delete ho jaye toh loop rok do
-                        
-                    await asyncio.sleep(10) # Har 10 sec mein timer update hoga
-                    played_sec += 10
+                        break # Stop loop if message deleted
                     
+                    await asyncio.sleep(10) # 10 sec update interval
+                    played += 10
         except Exception as e:
-            logger.error(f"Timer Error: {e}")
+            logger.error(f"Streaming Error: {e}")
+
+    async def boot(self) -> None:
+        PyTgCallsSession.notice_displayed = True
+        for ub in userbot.clients:
+            client = PyTgCalls(ub)
+            await client.start()
+            self.clients.append(client)
+        logger.info("Bot started with Original UI & Timer!")
