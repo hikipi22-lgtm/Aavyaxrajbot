@@ -23,15 +23,8 @@ def playlist_to_queue(chat_id: int, tracks: list) -> str:
 )
 @lang.language()
 @checkUB
-async def play_hndlr(
-    _,
-    m: types.Message,
-    force: bool = False,
-    m3u8: bool = False,
-    video: bool = False,
-    url: str = None,
-) -> None:
-    # 🔍 Original Search Text
+async def play_hndlr(_, m: types.Message, force: bool = False, m3u8: bool = False, video: bool = False, url: str = None):
+    # 🔍 Searching Text (Original)
     sent = await m.reply_text(m.lang["play_searching"])
     file = None
     mention = m.from_user.mention
@@ -54,22 +47,12 @@ async def play_hndlr(
             file.message_id = sent.id
         else:
             file = await yt.search(url, sent.id, video=video)
-        if not file:
-            return await sent.edit_text(m.lang["play_not_found"].format(config.SUPPORT_CHAT))
     elif len(m.command) >= 2:
         query = " ".join(m.command[1:])
         file = await yt.search(query, sent.id, video=video)
-        if not file:
-            return await sent.edit_text(m.lang["play_not_found"].format(config.SUPPORT_CHAT))
 
     if not file:
-        return await sent.edit_text(m.lang["play_usage"])
-
-    if file.duration_sec > config.DURATION_LIMIT:
-        return await sent.edit_text(m.lang["play_duration_limit"].format(config.DURATION_LIMIT // 60))
-
-    if await db.is_logger():
-        await utils.play_log(m, sent.link, file.title, file.duration)
+        return await sent.edit_text(m.lang["play_not_found"].format(config.SUPPORT_CHAT))
 
     file.user = mention
     if force:
@@ -84,16 +67,12 @@ async def play_hndlr(
             return
 
     if not file.file_path:
-        fname = f"downloads/{file.id}.{'mp4' if video else 'webm'}"
-        if Path(fname).exists():
-            file.file_path = fname
-        else:
-            # 📥 Original Download Text
-            await sent.edit_text(m.lang["play_downloading"])
-            file.file_path = await yt.download(file.id, video=video)
+        # 📥 Downloading Text (Original)
+        await sent.edit_text(m.lang["play_downloading"])
+        file.file_path = await yt.download(file.id, video=video)
 
-    # ⚠️ YouTube Block Check (For Railway 429 Error)
+    # ⚠️ Block Check (If YouTube fails)
     if not file.file_path:
-        return await sent.edit_text("❌ **ʏᴏᴜᴛᴜʙᴇ ʙʟᴏᴄᴋ!** ᴘʟᴇᴀsᴇ ᴜᴘᴅᴀᴛᴇ ᴄᴏᴏᴋɪᴇs.")
+        return await sent.edit_text("❌ **ʏᴏᴜᴛᴜʙᴇ ʙʟᴏᴄᴋ!** ᴜᴘᴅᴀᴛᴇ ᴄᴏᴏᴋɪᴇs.")
 
     await anon.play_media(chat_id=m.chat.id, message=sent, media=file)
