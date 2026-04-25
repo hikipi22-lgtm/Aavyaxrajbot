@@ -7,7 +7,7 @@ class Config:
     def __init__(self):
         self.API_ID = int(getenv("API_ID", 0))
         self.API_HASH = getenv("API_HASH")
-        self.BOT_TOKEN = getenv("BOT_TOKEN")
+        self.MUSIC_BOT_TOKEN = getenv("BOT_TOKEN")
         self.MONGO_URL = getenv("MONGO_URL")
         self.LOGGER_ID = int(getenv("LOGGER_ID", 0))
         self.OWNER_ID = int(getenv("OWNER_ID", 0))
@@ -19,15 +19,15 @@ class Config:
         self.SESSION4 = getenv("SESSION4", None)
         self.SESSION5 = getenv("SESSION5", None)
 
-        self.QUEUE_LIMIT = int(getenv("QUEUE_LIMIT", 20))
-        self.DURATION_LIMIT = int(getenv("DURATION_LIMIT", 60)) * 60
-        self.PLAYLIST_LIMIT = int(getenv("PLAYLIST_LIMIT", 20))
+        self.QUEUE_LIMIT = int(getenv("QUEUE_LIMIT", 40))
+        self.DURATION_LIMIT = int(getenv("DURATION_LIMIT", 120)) * 60
+        self.PLAYLIST_LIMIT = int(getenv("PLAYLIST_LIMIT", 40))
 
         self.SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/+gD6eD6JN3G42OTM9")
-        self.SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/rajfflive")
+        self.SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/ffofcchat")
 
-        self.AUTO_LEAVE = getenv("AUTO_LEAVE", "false").lower() == "true"
-        self.AUTO_END = getenv("AUTO_END", "true").lower() == "true"
+        self.AUTO_LEAVE = getenv("AUTO_LEAVE", "false").lower() == "false"
+        self.AUTO_END = getenv("AUTO_END", "true").lower() == "false"
         self.VIDEO_PLAY = getenv("VIDEO_PLAY", "true").lower() == "true"
         self.THUMB_GEN = getenv("THUMB_GEN", "true").lower() == "true"
         self.LANG_CODE = getenv("LANG_CODE", "en")
@@ -52,7 +52,7 @@ class Config:
         self.START_IMG = getenv("START_IMG", "https://silabotov.ru/img/5a52040b-83da-47ec-8927-faae141f126e.jpg")
 
     def check(self):
-        for var in ["API_ID", "API_HASH", "BOT_TOKEN", "MONGO_URL", "SESSION1"]:
+        for var in ["API_ID", "API_HASH", "MUSIC_BOT_TOKEN", "MONGO_URL", "SESSION1"]:
             if not getattr(self, var):
                 raise SystemExit(f"Missing: {var}")
 
